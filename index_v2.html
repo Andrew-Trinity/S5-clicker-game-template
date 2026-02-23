@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clicker Game — Task 2 (Iteration & Data)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; }
+    .wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    canvas { width: 100%; height: 220px; block-size: 220px; }
+    .muted { color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>Timed Round + Data</h1>
+      <p class="muted">Add a duration, record click timestamps, compute CPS, draw a simple line chart.</p>
+      <div class="row">
+        <label for="duration">Duration (s)</label>
+        <input id="duration" type="number" min="5" max="120" step="5" value="20" />
+        <button id="startBtn">Start</button>
+        <button id="clickBtn" disabled>Click!</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="row">
+        <div>Time left: <strong><span id="timeLeft">—</span></strong>s</div>
+        <div>Score: <strong><span id="score">0</span></strong></div>
+        <div>Avg CPS: <strong><span id="avgCps">0.00</span></strong></div>
+      </div>
+      <p id="a11yStatus" class="muted" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Chart</h2>
+      <canvas id="chart" aria-label="Clicks per second"></canvas>
+      <p class="muted">TODO: Draw CPS data on this canvas.</p>
+    </section>
+
+    <section class="card">
+      <h2>Sessions</h2>
+      <div class="row">
+        <button id="exportCsvBtn">Export CSV</button>
+        <button id="clearSessionsBtn">Clear Saved Sessions</button>
+      </div>
+      <table>
+        <thead><tr><th>Date/Time</th><th>Duration</th><th>Total</th><th>Avg CPS</th></tr></thead>
+        <tbody id="sessionsTbody"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Systems Thinking (explain your design)</h2>
+      <ul class="muted">
+        <li><strong>Inputs:</strong> clicks, keyboard, duration</li>
+        <li><strong>Processes:</strong> timestamp clicks, bin per second, compute CPS, draw</li>
+        <li><strong>Outputs:</strong> score, CPS, chart, saved sessions</li>
+        <li><strong>Feedback:</strong> graph changes behaviour; iterate design</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

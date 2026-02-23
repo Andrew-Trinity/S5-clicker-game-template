@@ -1,0 +1,39 @@
+{
+  "tests": [
+    {
+      "name": "Structure: files & required elements",
+      "setup": "",
+      "run": "bash ./.github/classroom/tests/structure.sh",
+      "timeout": 10,
+      "points": 10
+    },
+    {
+      "name": "Lint: eslint (no errors)",
+      "setup": "npm ci",
+      "run": "npm run lint",
+      "timeout": 120,
+      "points": 10
+    },
+    {
+      "name": "Lint: htmlhint (no errors)",
+      "setup": "npm ci",
+      "run": "npm run lint:html",
+      "timeout": 120,
+      "points": 5
+    },
+    {
+      "name": "Functionality: increments score",
+      "setup": "npm ci",
+      "run": "npm test -- -t \"increments score\"",
+      "timeout": 120,
+      "points": 15
+    },
+    {
+      "name": "Functionality: reset score",
+      "setup": "npm ci",
+      "run": "npm test -- -t \"resets score\"",
+      "timeout": 120,
+      "points": 10
+    }
+  ]
+}
