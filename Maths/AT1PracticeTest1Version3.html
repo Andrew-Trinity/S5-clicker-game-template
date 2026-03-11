@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Year 7 Visual Novel — Practice Task 1 (v4)</title>
+<style>
+  :root{
+    /* Calm palette: soft teal/indigo with gentle accents */
+    --bg: #f6fbff;
+    --panel: #ffffff;
+    --ink: #1f2a44;
+    --muted: #6b7a99;
+    --teal: #56c2c4;
+    --teal-2: #88d9da;
+    --indigo: #5563c1;
+    --indigo-2: #90a0ff;
+    --accent: #ffd166;
+    --shadow: 0 10px 25px rgba(40,60,120,.12);
+    --radius: 18px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(1200px 500px at 15% -10%, #eaf7ff 0%, #f6fbff 50%, #f6fbff 100%);
+  }
+  .app{ max-width:1100px; margin:24px auto; padding:16px; }
+
+  .topbar{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .badge{
+    background: linear-gradient(135deg, var(--teal), var(--indigo));
+    color:#fff; padding:6px 12px; border-radius:999px; font-weight:700; font-size:12px; box-shadow: var(--shadow);
+  }
+  .title{ font-size: clamp(18px, 2.6vw, 26px); font-weight:800; letter-spacing:.2px; }
+
+  .progress{ width:100%; height:10px; background:#e9f1ff; border-radius:999px; overflow:hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.05); }
+  .progress>div{ height:100%; width:0%; background: linear-gradient(90deg, var(--indigo), var(--teal)); transition: width .35s ease; }
+
+  /* Question + visual */
+  .question{
+    display:grid; grid-template-columns: 1.3fr 1fr; gap:14px;
+    background: linear-gradient(90deg, rgba(136,217,218,.18), rgba(144,160,255,.18));
+    border:1px solid rgba(85,99,193,.15);
+    padding:14px; border-radius:14px; box-shadow: var(--shadow);
+    margin-top:12px;
+  }
+  .qtext h3{ margin:0 0 6px 0; font-size:16px; color:#21305a; }
+  .qtext p{ margin:6px 0; color:#21305a; }
+  .qcode{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  .qvis{
+    background:#fff; border-radius:12px; padding:8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
+    display:flex; align-items:center; justify-content:center; min-height:140px;
+  }
+
+  /* Inline math styling (local typesetter output) */
+  .math sup{ font-size: .75em; vertical-align: super; }
+  .sqrt{ display:inline-flex; align-items:flex-end; line-height:1; }
+  .sqrt .root{ font-weight:700; margin-right:2px; }
+  .sqrt .radicand{ display:inline-block; border-top: 2px solid currentColor; padding: 0 2px; transform: translateY(-0.05em); }
+
+  /* Student panels (≈50% footprint) */
+  .stage{
+    display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:14px;
+  }
+  .panel{
+    background: var(--panel); border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height: 130px;
+  }
+  .student-label{ font-weight:700; color:#1e2b50; margin-top:6px; font-size:13px; }
+  .avatar{
+    width: 80px; height: 80px; border-radius:16px;
+    background: radial-gradient(40px 40px at 60% 20%, rgba(255,255,255,.65), transparent 60%), linear-gradient(135deg, #ffffff, #eef7ff);
+    box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center;
+    transition: transform .2s ease, outline .2s ease; outline: 3px solid transparent; overflow:hidden;
+  }
+  .speaking{ transform: translateY(-2px) scale(1.02); outline-color: var(--indigo-2); }
+  .avatar svg{ width:100%; height:100%; }
+
+  /* Dialogue box */
+  .textbox{
+    position: sticky; bottom: 12px; margin-top: 12px;
+    background: var(--panel); border-radius: var(--radius);
+    padding: 12px; box-shadow: var(--shadow);
+  }
+  .speaker-tag{
+    font-size: 11px; font-weight: 800; letter-spacing:.3px; text-transform: uppercase; color:#4d5bbf; margin-bottom:6px;
+  }
+  .dialogue{ font-size: clamp(15px, 1.7vw, 18px); line-height:1.5; }
+  .controls{ display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px; }
+  button{
+    border:0; background: var(--indigo); color:#fff; padding:8px 12px; border-radius:10px;
+    font-weight:700; cursor:pointer; box-shadow: var(--shadow); transition: transform .1s ease, background .2s ease;
+  }
+  button.secondary{ background: var(--teal); }
+  button.ghost{ background: #eaf1ff; color: var(--indigo); }
+  button:hover{ transform: translateY(-1px); }
+  button:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+  .footer-note{ margin-top:8px; color: var(--muted); font-size:12px; }
+
+  @media (max-width: 880px){
+    .question{ grid-template-columns: 1fr; }
+    .stage{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Year 7 Visual Novel — Practice Task v4">
+    <div class="topbar" aria-live="polite">
+      <span class="badge">Practice Task 1 · Visual Novel (v4)</span>
+      <div class="title" id="title">Section A — Integers</div>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="progressBar"></div></div>
+
+    <!-- QUESTION AREA -->
+    <section class="question" aria-live="polite" aria-atomic="true">
+      <div class="qtext" id="qtext">
+        <h3>Question</h3>
+        <p>Tap Continue to begin.</p>
+      </div>
+      <div class="qvis" id="qvis" aria-label="Question visual (if available)">
+        <span style="color:#7a8aae; font-size:14px;">Visual appears here for selected questions (e.g., number line).</span>
+      </div>
+    </section>
+
+    <!-- STUDENT PANELS -->
+    <div class="stage">
+      <!-- Student 1 -->
+      <section class="panel" aria-label="Student 1">
+        <div class="avatar" id="avatarLeft" aria-hidden="true">
+          <!-- Simple illustrated avatar (soft teal) -->
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#88d9da"/><stop offset="1" stop-color="#56c2c4"/></linearGradient></defs>
+            <rect x="0" y="0" width="200" height="200" fill="url(#g1)"/>
+            <circle cx="100" cy="85" r="48" fill="#ffe6cc"/>
+            <path d="M60,75 Q100,25 140,75 Q125,55 100,55 Q75,55 60,75 Z" fill="#2e3a7d"/>
+            <circle cx="85" cy="90" r="5" fill="#24324e"/><circle cx="115" cy="90" r="5" fill="#24324e"/>
+            <path d="M80,105 Q100,120 120,105" stroke="#24324e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <rect x="60" y="130" width="80" height="60" rx="16" fill="#eaf7ff" stroke="#90a0ff"/>
+          </svg>
+        </div>
+        <div class="student-label">Student 1</div>
+      </section>
+
+      <!-- Student 2 -->
+      <section class="panel" aria-label="Student 2">
+        <div class="avatar" id="avatarRight" aria-hidden="true">
+          <!-- Simple illustrated avatar (soft indigo) -->
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#90a0ff"/><stop offset="1" stop-color="#5563c1"/></linearGradient></defs>
+            <rect x="0" y="0" width="200" height="200" fill="url(#g2)"/>
+            <circle cx="100" cy="85" r="48" fill="#ffe6cc"/>
+            <path d="M60,80 Q100,45 140,80 Q140,60 120,55 Q100,50 80,55 Q60,60 60,80 Z" fill="#1f2a44"/>
+            <rect x="70" y="82" width="25" height="14" rx="3" fill="none" stroke="#1f2a44" stroke-width="3"/>
+            <rect x="105" y="82" width="25" height="14" rx="3" fill="none" stroke="#1f2a44" stroke-width="3"/>
+            <line x1="95" y1="88.5" x2="105" y2="88.5" stroke="#1f2a44" stroke-width="3"/>
+            <path d="M80,107 Q100,122 120,107" stroke="#24324e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <rect x="60" y="130" width="80" height="60" rx="16" fill="#eef0ff" stroke="#56c2c4"/>
+          </svg>
+        </div>
+        <div class="student-label">Student 2</div>
+      </section>
+    </div>
+
+    <!-- Dialogue Box -->
+    <div class="textbox" aria-live="polite" aria-atomic="true">
+      <div class="speaker-tag" id="speaker">Student 1</div>
+      <div class="dialogue" id="dialogue">Tap Continue to begin.</div>
+      <div class="controls">
+        <div>
+          <button id="btnBack" class="ghost" disabled>&larr; Back</button>
+        </div>
+        <div>
+          <button id="btnRepeat" class="secondary" title="Re-read the current line">Repeat</button>
+          <button id="btnNext">Continue &rarr;</button>
+        </div>
+      </div>
+      <div class="footer-note">Tip: Use keyboard <strong>←</strong> and <strong>→</strong>, or <strong>R</strong> to replay a line.</div>
+    </div>
+  </div>
+
+<script>
+/* =========================================================================
+   Visual Novel v4
+   - Local "typesetter" converts ^ powers and sqrt() to styled HTML
+   - Smaller student panels retained
+   - Number-line visuals retained
+   =======================================================================*/
+
+const chapters = [
+  { id:"intro", title:"Welcome", qTitle:"Welcome", qHTML:"We’ll work through the practice task. Where a visual helps, we’ll show it.",
+    lines:[
+      {speaker:"s1", text:"We’ve got Integers, Indices, and a few Multiple Choice at the end."},
+      {speaker:"s2", text:"Let’s discuss ideas—even if we’re unsure—then confirm the best reasoning."}
+    ]
+  },
+
+  // ===== Section A — Integers
+  { id:"A1a", title:"Section A – Q1a", qTitle:"Q1a) Point on a number line",
+    qHTML:"State the <strong>integer</strong> where the point is plotted.",
+    visual:{ type:"numberline-dot", min:-8, max:8, step:1, point:-3 },
+    lines:[
+      {speaker:"s1", text:"I think the answer is -3 because the dot sits exactly on -3."},
+      {speaker:"s2", text:"Agreed: the integer is -3."}
+    ]
+  },
+  { id:"A1b", title:"Section A – Q1b", qTitle:"Q1b) Opposite integer",
+    qHTML:"State the <strong>opposite</strong> of the plotted integer.",
+    visual:{ type:"numberline-dot", min:-8, max:8, step:1, point:-3 },
+    lines:[
+      {speaker:"s1", text:"If the point was -3, the opposite is 3."},
+      {speaker:"s2", text:"Right—same distance from zero on the other side: 3."}
+    ]
+  },
+  { id:"A1c", title:"Section A – Q1c", qTitle:"Q1c) 5 units to the right",
+    qHTML:"State the integer <strong>5 units to the right</strong> of the plotted point.",
+    visual:{ type:"numberline-dot", min:-8, max:8, step:1, point:-3 },
+    lines:[
+      {speaker:"s1", text:"From -3, five right: -2, -1, 0, 1, 2 → answer 2."},
+      {speaker:"s2", text:"Yes—moving right increases the value."}
+    ]
+  },
+  { id:"A1d", title:"Section A – Q1d", qTitle:"Q1d) 3 units to the left",
+    qHTML:"State the integer <strong>3 units to the left</strong> of the plotted point.",
+    visual:{ type:"numberline-dot", min:-8, max:8, step:1, point:-3 },
+    lines:[
+      {speaker:"s1", text:"Left means smaller. From -3: -4, -5, -6."},
+      {speaker:"s2", text:"So the answer is -6."}
+    ]
+  },
+
+  { id:"A2a", title:"Section A – Q2a", qTitle:"Q2a) Compare 7 and -1",
+    qHTML:"Complete with &lt; or &gt;: <span class='qcode'>7 __ -1</span>",
+    lines:[
+      {speaker:"s1", text:"7 is greater than -1 → 7 > -1."},
+      {speaker:"s2", text:"Correct: 7 > -1."}
+    ]
+  },
+  { id:"A2b", title:"Section A – Q2b", qTitle:"Q2b) Compare -15 and -20",
+    qHTML:"Complete with &lt; or &gt;: <span class='qcode'>-15 __ -20</span>",
+    lines:[
+      {speaker:"s1", text:"Closer to zero is larger for negatives. So -15 > -20."},
+      {speaker:"s2", text:"Exactly: -15 > -20."}
+    ]
+  },
+
+  { id:"A3", title:"Section A – Q3", qTitle:"Q3) Ascending order",
+    qHTML:"Arrange in ascending order: <span class='qcode'>11, -12, 7, -5, -1, 9</span>",
+    lines:[
+      {speaker:"s1", text:"Smallest to largest: -12, -5, -1, 7, 9, 11."},
+      {speaker:"s2", text:"That ordering is correct."}
+    ]
+  },
+
+  { id:"A4", title:"Section A – Q4", qTitle:"Q4) Show 5 + (-8) on the number line",
+    qHTML:"Use the number line to show that <span class='qcode'>5 + (-8) = -3</span>.",
+    visual:{ type:"numberline-move", min:-12, max:12, step:1, start:5, delta:-8 },
+    lines:[
+      {speaker:"s1", text:"Start at 5, move 8 left, land at -3 → so 5 + (-8) = -3."},
+      {speaker:"s2", text:"Nicely shown on the number line."}
+    ]
+  },
+
+  { id:"A5a", title:"Section A – Q5a", qTitle:"Q5a) Order of operations",
+    qHTML:"Evaluate: <span class='qcode'>8 + 3 × 7</span>",
+    lines:[
+      {speaker:"s1", text:"Multiply first: 3 × 7 = 21, then 8 + 21 = 29."},
+      {speaker:"s2", text:"Answer: 29."}
+    ]
+  },
+  { id:"A5b", title:"Section A – Q5b", qTitle:"Q5b) Order of operations",
+    qHTML:"Evaluate: <span class='qcode'>8 + 2 × (7 - 3) ÷ 4</span>",
+    lines:[
+      {speaker:"s1", text:"(7 - 3)=4; 2 × 4=8; 8 ÷ 4=2; 8 + 2=10."},
+      {speaker:"s2", text:"So the result is 10."}
+    ]
+  },
+
+  { id:"A6a", title:"Section A – Q6a", qTitle:"Q6a) Make it true",
+    qHTML:"Insert +, −, ×, ÷ to make: <span class='qcode'>3 7 3 = 24</span>",
+    lines:[
+      {speaker:"s1", text:"Could be 3 × 7 + 3 = 24, or 3 + 7 × 3 = 24."},
+      {speaker:"s2", text:"Both work by order of operations; let’s record 3 × 7 + 3 = 24."}
+    ]
+  },
+  { id:"A6b", title:"Section A – Q6b", qTitle:"Q6b) Make it true",
+    qHTML:"Insert +, −, ×, ÷ to make: <span class='qcode'>8 3 3 = -1</span>",
+    lines:[
+      {speaker:"s1", text:"8 - (3 × 3) = -1 since 8 - 9 = -1."},
+      {speaker:"s2", text:"That works."}
+    ]
+  },
+  { id:"A6c", title:"Section A – Q6c", qTitle:"Q6c) Make it true",
+    qHTML:"Insert +, −, ×, ÷ to make: <span class='qcode'>5 5 7 10 = -3</span>",
+    lines:[
+      {speaker:"s1", text:"Not sure… maybe 5 - 5 + 7 - 10 = -3?"},
+      {speaker:"s2", text:"Yes—5 - 5 + 7 - 10 equals -3."}
+    ]
+  },
+
+  // ===== Section B — Indices (shown with superscripts & √)
+  { id:"B1", title:"Section B – Q1", qTitle:"Q1) Parts of indices",
+    qHTML:"What do we call the parts of an expression like <span class='qcode'>2^5</span>?",
+    lines:[
+      {speaker:"s1", text:"2 is the base and 5 is the index (also called the exponent or power)."},
+      {speaker:"s2", text:"Right: base^index (exponent/power)."}
+    ]
+  },
+  { id:"B2a", title:"Section B – Q2a", qTitle:"Q2a) Evaluate",
+    qHTML:"<span class='qcode'>7^2 - 4^2</span>",
+    lines:[
+      {speaker:"s1", text:"7^2 = 49 and 4^2 = 16; 49 - 16 = 33."},
+      {speaker:"s2", text:"Answer: 33."}
+    ]
+  },
+  { id:"B2b", title:"Section B – Q2b", qTitle:"Q2b) Evaluate",
+    qHTML:"<span class='qcode'>9^2 + sqrt(27 ÷ 3)</span> (interpreting as 9^2 + sqrt(27 ÷ 3))",
+    lines:[
+      {speaker:"s1", text:"I’m not totally sure—is it 9^2 + sqrt(27) ÷ 3, or 9^2 + sqrt(27 ÷ 3)?"},
+      {speaker:"s2", text:"Let’s use 9^2 + sqrt(27 ÷ 3) = 81 + sqrt(9) = 81 + 3 = 84."}
+    ]
+  },
+  { id:"B3a", title:"Section B – Q3a", qTitle:"Q3a) Laws of indices",
+    qHTML:"Simplify: <span class='qcode'>5^2 × 5^3</span>",
+    lines:[
+      {speaker:"s1", text:"Same base multiply → add indices: 5^(2+3) = 5^5."},
+      {speaker:"s2", text:"So 5^5."}
+    ]
+  },
+  { id:"B3b", title:"Section B – Q3b", qTitle:"Q3b) Laws of indices",
+    qHTML:"Simplify: <span class='qcode'>3^7 ÷ 3^3</span>",
+    lines:[
+      {speaker:"s1", text:"Same base divide → subtract indices: 3^(7-3) = 3^4."},
+      {speaker:"s2", text:"3^4."}
+    ]
+  },
+  { id:"B3c", title:"Section B – Q3c", qTitle:"Q3c) Laws of indices",
+    qHTML:"Simplify: <span class='qcode'>(2^3)^5</span>",
+    lines:[
+      {speaker:"s1", text:"Power of a power → multiply indices: 2^(3×5) = 2^15."},
+      {speaker:"s2", text:"2^15."}
+    ]
+  },
+  { id:"B3d", title:"Section B – Q3d", qTitle:"Q3d) Write in index form",
+    qHTML:"<span class='qcode'>7 × 7 × 7 × 7 × 4 × 4 × 4</span>",
+    lines:[
+      {speaker:"s1", text:"That’s 7^4 × 4^3."},
+      {speaker:"s2", text:"Exactly: 7^4 · 4^3."}
+    ]
+  },
+  { id:"B4", title:"Section B – Q4", qTitle:"Q4) Factors and HCF",
+    qHTML:"List factors of 16 and 28; find HCF(16, 28).",
+    lines:[
+      {speaker:"s1", text:"16 → 1,2,4,8,16; 28 → 1,2,4,7,14,28."},
+      {speaker:"s2", text:"Common: 1,2,4; HCF = 4."}
+    ]
+  },
+  { id:"B5", title:"Section B – Q5", qTitle:"Q5) Factor tree",
+    qHTML:"(a) Complete the factor tree. (b) Write as a product of prime factors.",
+    lines:[
+      {speaker:"s1", text:"I’m not sure what number the tree shows in our copy."},
+      {speaker:"s2", text:"Method: keep splitting into primes. Example: 84 = 2 × 2 × 3 × 7 = 2^2 · 3 · 7."}
+    ]
+  },
+  { id:"B6", title:"Section B – Q6", qTitle:"Q6) Insert missing powers",
+    qHTML:"Use index laws: multiply → add indices; divide → subtract; power of a power → multiply.",
+    lines:[
+      {speaker:"s1", text:"Pick exponents so those relationships hold."},
+      {speaker:"s2", text:"Right—that’s the key idea."}
+    ]
+  },
+  { id:"B7", title:"Section B – Q7", qTitle:"Q7) Lowest common multiple",
+    qHTML:"Find LCM(12, 20, 30).",
+    lines:[
+      {speaker:"s1", text:"12=2^2·3, 20=2^2·5, 30=2·3·5 → LCM=2^2·3·5=60."},
+      {speaker:"s2", text:"Answer: 60."}
+    ]
+  },
+  { id:"B8", title:"Section B – Q8", qTitle:"Q8) Bells problem",
+    qHTML:"Bells ring every 12, 16, 24 s. When next together?",
+    lines:[
+      {speaker:"s1", text:"LCM(12,16,24). 12=2^2·3, 16=2^4, 24=2^3·3 → LCM=2^4·3=48."},
+      {speaker:"s2", text:"So after 48 seconds."}
+    ]
+  },
+
+  // ===== Section C — MCQ
+  { id:"C1", title:"Section C – MCQ", qTitle:"MCQ strategy",
+    qHTML:"Use estimation, elimination, and sign/unit checks.",
+    lines:[
+      {speaker:"s1", text:"I’ll test options quickly and eliminate the impossible ones."},
+      {speaker:"s2", text:"And watch signs, units, and order of operations."}
+    ]
+  },
+
+  { id:"outro", title:"Wrap-up", qTitle:"Great work!", qHTML:"We’ve completed the practice task—nice teamwork.",
+    lines:[
+      {speaker:"s1", text:"When unsure, we said so and then confirmed the reasoning."},
+      {speaker:"s2", text:"Ready for the real thing!"}
+    ]
+  }
+];
+
+/* ---------------- Engine ---------------- */
+const flat = [];
+chapters.forEach(ch=>{
+  flat.push({meta:true, id:ch.id, title:ch.title, qTitle:ch.qTitle, qHTML:ch.qHTML, visual:ch.visual});
+  ch.lines.forEach(ln=> flat.push({...ln, title:ch.title, qTitle:ch.qTitle, qHTML:ch.qHTML, visual:ch.visual}));
+});
+let idx = 0;
+
+const elTitle = document.getElementById('title');
+const elSpeaker = document.getElementById('speaker');
+const elDialogue = document.getElementById('dialogue');
+const elAvatarLeft = document.getElementById('avatarLeft');
+const elAvatarRight = document.getElementById('avatarRight');
+const elQText = document.getElementById('qtext');
+const elQVis  = document.getElementById('qvis');
+const btnNext = document.getElementById('btnNext');
+const btnBack = document.getElementById('btnBack');
+const btnRepeat = document.getElementById('btnRepeat');
+const bar = document.getElementById('progressBar');
+
+function render(){
+  const node = flat[idx];
+  const totalLines = flat.filter(x=>!x.meta).length;
+  const lineNumber = flat.slice(0, idx+1).filter(x=>!x.meta).length;
+  bar.style.width = (totalLines>0? Math.round((lineNumber/totalLines)*100):0) + "%";
+
+  elTitle.textContent = node.title || "Practice Task 1";
+
+  // Question text + visual (typeset)
+  const qTitle = node.qTitle ? `<strong>${escapeHTML(node.qTitle)}</strong>` : "";
+  elQText.innerHTML = `<h3>Question</h3>
+    <p>${qTitle}</p>
+    <p class="math">${typeset(node.qHTML || "")}</p>`;
+  drawVisual(node.visual);
+
+  if(node.meta){
+    elSpeaker.textContent = "—";
+    elDialogue.innerHTML = `<em>Next up:</em> <strong>${escapeHTML(node.title || "")}</strong>`;
+    setSpeaking(null);
+  }else{
+    elSpeaker.textContent = node.speaker === "s1" ? "Student 1" : "Student 2";
+    elDialogue.innerHTML = `<span class="math">${typeset(escapeHTML(node.text))}</span>`;
+    setSpeaking(node.speaker);
+  }
+
+  btnBack.disabled = idx === 0;
+  btnNext.disabled = idx >= flat.length - 1;
+}
+function setSpeaking(who){
+  elAvatarLeft.classList.toggle('speaking', who === 's1');
+  elAvatarRight.classList.toggle('speaking', who === 's2');
+}
+function next(){ if(idx < flat.length-1){ idx++; render(); } }
+function back(){ if(idx > 0){ idx--; render(); } }
+btnNext.addEventListener('click', next);
+btnBack.addEventListener('click', back);
+btnRepeat.addEventListener('click', ()=> render());
+document.addEventListener('keydown', e=>{
+  if(e.key==="ArrowRight") next();
+  if(e.key==="ArrowLeft") back();
+  if(e.key && e.key.toLowerCase()==="r") render();
+});
+
+/* --------------- Visuals --------------- */
+function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function drawVisual(visual){
+  clear(elQVis);
+  if(!visual){
+    elQVis.innerHTML = `<span style="color:#7a8aae; font-size:14px;">No visual for this item.</span>`;
+    return;
+  }
+  if(visual.type === "numberline-dot"){
+    elQVis.appendChild(numberLineSVG(visual));
+  }else if(visual.type === "numberline-move"){
+    elQVis.appendChild(numberLineMoveSVG(visual));
+  }else{
+    elQVis.innerHTML = `<span style="color:#7a8aae; font-size:14px;">(Visual type: ${escapeHTML(String(visual.type))})</span>`;
+  }
+}
+function numberLineSVG({min=-10, max=10, step=1, point=0}={}){
+  const W=620, H=140, m=40;
+  const svg = createSVG(W,H);
+  const scale = x => m + (x-min)*((W-2*m)/(max-min));
+
+  line(svg, m, H/2, W-m, H/2, "#223", 2);
+  for(let v=min; v<=max; v+=step){
+    const x=scale(v);
+    line(svg, x, H/2-8, x, H/2+8, "#223", 1.5);
+    text(svg, x, H/2+22, String(v), "#1f2a44", "middle", "12px");
+  }
+  circle(svg, scale(point), H/2, 7.5, "#e11d48", "#fff", 2.5);
+  tag(svg, scale(point), H/2-34, `• ${point}`, "#e11d48");
+  return svg;
+}
+function numberLineMoveSVG({min=-12, max=12, step=1, start=0, delta=0}={}){
+  const end = start + delta;
+  const W=620, H=160, m=40;
+  const svg = createSVG(W,H);
+  const scale = x => m + (x-min)*((W-2*m)/(max-min));
+
+  line(svg, m, H/2, W-m, H/2, "#223", 2);
+  for(let v=min; v<=max; v+=step){
+    const x=scale(v);
+    line(svg, x, H/2-8, x, H/2+8, "#223", 1.5);
+    text(svg, x, H/2+22, String(v), "#1f2a44", "middle", "12px");
+  }
+  circle(svg, scale(start), H/2, 6.5, "#22c55e", "#fff", 2);
+  circle(svg, scale(end), H/2, 7.5, "#e11d48", "#fff", 2.5);
+  tag(svg, scale(start), H/2-34, `start: ${start}`, "#22c55e");
+  tag(svg, scale(end),   H/2-34, `end: ${end}`,   "#e11d48");
+
+  const x1 = scale(start), x2 = scale(end), y = H/2, c = 28;
+  const path = `M ${x1} ${y} C ${(x1+x2)/2} ${y - Math.sign(delta)*c}, ${(x1+x2)/2} ${y - Math.sign(delta)*c}, ${x2} ${y}`;
+  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+  const marker = document.createElementNS("http://www.w3.org/2000/svg","marker");
+  marker.setAttribute("id","arrow"); marker.setAttribute("markerWidth","10"); marker.setAttribute("markerHeight","10");
+  marker.setAttribute("refX","6"); marker.setAttribute("refY","3"); marker.setAttribute("orient","auto");
+  const head = document.createElementNS("http://www.w3.org/2000/svg","path");
+  head.setAttribute("d","M0,0 L6,3 L0,6 Z"); head.setAttribute("fill", "#0ea5e9");
+  marker.appendChild(head); defs.appendChild(marker); svg.appendChild(defs);
+
+  const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+  p.setAttribute("d", path);
+  p.setAttribute("fill","none");
+  p.setAttribute("stroke", "#0ea5e9");
+  p.setAttribute("stroke-width","3");
+  p.setAttribute("marker-end","url(#arrow)");
+  svg.appendChild(p);
+  return svg;
+}
+
+/* ---- SVG helpers ---- */
+function createSVG(w,h){
+  const s = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  s.setAttribute("viewBox",`0 0 ${w} ${h}`);
+  s.setAttribute("width","100%");
+  s.setAttribute("height","100%");
+  s.setAttribute("role","img");
+  return s;
+}
+function line(svg,x1,y1,x2,y2,stroke="#000",w=1){
+  const el = document.createElementNS(svg.namespaceURI,"line");
+  el.setAttribute("x1",x1); el.setAttribute("y1",y1); el.setAttribute("x2",x2); el.setAttribute("y2",y2);
+  el.setAttribute("stroke",stroke); el.setAttribute("stroke-width",w);
+  svg.appendChild(el);
+  return el;
+}
+function rect(svg,x,y,w,h,r=4,fill="#223"){
+  const el = document.createElementNS(svg.namespaceURI,"rect");
+  el.setAttribute("x",x); el.setAttribute("y",y); el.setAttribute("rx",r); el.setAttribute("width",w); el.setAttribute("height",h);
+  el.setAttribute("fill",fill); svg.appendChild(el); return el;
+}
+function text(svg,x,y,txt,fill="#000",anchor="middle",size="12px"){
+  const t = document.createElementNS(svg.namespaceURI,"text");
+  t.setAttribute("x",x); t.setAttribute("y",y);
+  t.setAttribute("fill",fill);
+  t.setAttribute("font-size",size);
+  t.setAttribute("text-anchor",anchor);
+  t.setAttribute("font-family","Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif");
+  t.textContent = txt;
+  svg.appendChild(t);
+  return t;
+}
+function circle(svg,cx,cy,r,stroke="#000",fill="#fff",w=2){
+  const c = document.createElementNS(svg.namespaceURI,"circle");
+  c.setAttribute("cx",cx); c.setAttribute("cy",cy); c.setAttribute("r",r);
+  c.setAttribute("fill",fill); c.setAttribute("stroke",stroke); c.setAttribute("stroke-width",w);
+  svg.appendChild(c);
+  return c;
+}
+function tag(svg, x, y, label, color="#223"){
+  const W=86, H=20; // fixed-size label chip
+  rect(svg, x - W/2, y, W, H, 6, color);
+  text(svg, x, y + 14, label, "#fff", "middle", "12px");
+}
+
+/* ---- Utilities ---- */
+function escapeHTML(s){
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+/* ---- Local typesetter: powers and roots ----
+   Converts:
+     - token^number        -> token<sup>number</sup>
+     - token^(...anything) -> token<sup>(...anything)</sup>
+     - sqrt(expr)          -> √ with a bar over expr
+   Runs on both question text (HTML-safe already) and dialogue text (escaped, then typeset).
+*/
+function typeset(html){
+  let s = String(html);
+
+  // 1) Handle sqrt(...) -> √(with vinculum)
+  //    Wrap as <span class="sqrt"><span class="root">√</span><span class="radicand">...</span></span>
+  s = s.replace(/sqrt\(\s*([^)]+?)\s*\)/g, (_m, rad) =>
+    `<span class="sqrt"><span class="root">√</span><span class="radicand">${rad}</span></span>`
+  );
+
+  // 2a) Base^( ... ) where base is letters/numbers (or ) ] ) ends) :
+  //     e.g., 2^(3×5), x^(n+1), (2x)^(3)
+  s = s.replace(/([A-Za-z0-9)\]])\^\(([^)]+)\)/g, (_m, base, exp) =>
+    `${base}<sup>(${exp})</sup>`
+  );
+
+  // 2b) Base^exp with simple numeric/letter exp (no parentheses)
+  //     e.g., 7^2, x^3, 10^n
+  s = s.replace(/([A-Za-z0-9)\]]?)\^([A-Za-z0-9]+)/g, (_m, base, exp) =>
+    `${base}<sup>${exp}</sup>`
+  );
+
+  // Wrap result in .math so superscripts inherit styles
+  return s;
+}
+
+/* boot */
+render();
+</script>
+</body>
+</html>
+``
