@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Index Laws — Visual Novel Lesson (I do · We do · You do)</title>
+<style>
+  :root{
+    --red:#c62828;
+    --blue:#1565c0;
+    --white:#ffffff;
+    --ink:#0f172a;
+    --muted:#475569;
+    --bg:#f8fafc;
+    --ok:#087f5b;
+    --warn:#b45309;
+    --focus: 0 0 0 3px rgba(21,101,192,.35);
+    --radius: 16px;
+    --shadow: 0 6px 18px rgba(0,0,0,.08);
+    --bubble: #ffffff;
+    --bubble-s: #eef2ff;  /* student */
+    --bubble-t: #f1f5f9;  /* teacher */
+  }
+
+  /* Dyslexia-friendly stack (local-only; no external loads) */
+  body{
+    margin:0;
+    font-family: "Lexend","OpenDyslexic","Atkinson Hyperlegible","Segoe UI","Roboto","Arial",system-ui,-apple-system,sans-serif;
+    line-height:1.45;
+    letter-spacing:.2px;
+    background:var(--bg);
+    color:var(--ink);
+  }
+
+  .wrap{max-width:1050px;margin:0 auto;padding:1rem 1rem 4rem;}
+
+  /* Slim header */
+  header.hero{
+    background: linear-gradient(120deg,var(--blue),#3b82f6 60%);
+    color:var(--white);
+    padding:1.0rem 1rem 1.1rem;
+    box-shadow: var(--shadow);
+    position: sticky; top: 0; z-index: 2;
+  }
+  header .title{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.2);padding:.18rem .55rem;border-radius:999px;font-weight:600;font-size:.9rem}
+  h1{margin:.1rem 0 0;font-size:1.35rem}
+  .subtitle{opacity:.95;margin:.25rem 0 0;font-size:.98rem}
+  nav.breadcrumb{margin:.45rem 0 0; font-size:.9rem; opacity:.92}
+
+  /* Cards & sections */
+  .card{
+    background:var(--white);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:1rem;
+    margin:1rem 0 1.25rem;
+  }
+  .card h2{margin:.2rem 0 .7rem}
+
+  .goals{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  .goals .panel{border-left:6px solid var(--red);background:#fff7f7;padding:.8rem;border-radius:12px}
+  .goals .panel.blue{border-left-color:var(--blue);background:#f0f7ff}
+
+  /* Stage headers */
+  .stage{border-top:4px solid var(--blue);margin-top:1.1rem;padding-top:.9rem}
+  .stage h2{display:flex;align-items:center;gap:.5rem}
+  .stage .blurb{color:var(--muted);margin:.05rem 0 .75rem}
+
+  /* VN scene layout */
+  .scene{display:grid;grid-template-columns:1fr;gap:.8rem;margin:.8rem 0}
+  .bubble{
+    background:var(--bubble);
+    border:1px solid #e2e8f0;
+    border-radius:18px;
+    padding:.75rem .9rem;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);
+    position:relative;
+  }
+  .bubble.teacher{background:var(--bubble-t)}
+  .bubble.student{background:var(--bubble-s);border-color:#e0e7ff}
+  .badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:1.65rem;height:1.65rem;border-radius:50%;
+    font-weight:800;color:#fff;margin-right:.5rem;
+  }
+  .badge.t{background:var(--blue)}
+  .badge.s{background:var(--red)}
+  .bubble .meta{font-size:.9rem;color:#334155;margin-bottom:.2rem}
+  .bubble .content{font-size:1.02rem}
+
+  /* Items (prompt + input) inside VN flow */
+  .item{
+    border:1px solid #e2e8f0;border-radius:14px; padding:.85rem; background:#fff;
+  }
+  .prompt{font-size:1.1rem;font-weight:800}
+  .law{font-size:.96rem;color:var(--muted);margin:.35rem 0 .55rem}
+
+  .io{display:grid;grid-template-columns:1fr;gap:.55rem}
+  .io input[type="text"]{
+    padding:.7rem .8rem;border-radius:10px;border:2px solid #cbd5e1;font-size:1.05rem;
+    outline:none;
+  }
+  .io input[type="text"]:focus{border-color:var(--blue);box-shadow:var(--focus)}
+  .placeholder-note{font-size:.88rem;color:#64748b}
+
+  .buttons{display:flex;gap:.5rem;flex-wrap:wrap}
+  button{
+    border:0;border-radius:12px;padding:.6rem .9rem;font-weight:700;cursor:pointer;
+    background:var(--blue); color:var(--white); box-shadow: var(--shadow);
+  }
+  button.secondary{background:#e2e8f0;color:#0f172a}
+  button.ghost{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+  button:focus-visible{outline:none;box-shadow:var(--focus)}
+  button:disabled{opacity:.6;cursor:not-allowed}
+
+  .fb{margin:.2rem 0 0;min-height:1.4rem}
+  .fb[aria-live]{padding:.35rem .5rem;border-radius:8px}
+  .fb.ok{color:#065f46;background:#ecfdf5}
+  .fb.no{color:#7c2d12;background:#fff7ed}
+
+  .hint{
+    margin-top:.2rem;border-left:5px solid var(--blue);background:#f0f7ff;border-radius:8px;padding:.5rem .6rem
+  }
+  .hint p{margin:.25rem 0}
+
+  /* Progress */
+  .progress{display:flex;align-items:center;gap:.6rem;margin:.6rem 0 0}
+  .bar{flex:1;height:10px;border-radius:999px;background:#e2e8f0;position:relative;overflow:hidden}
+  .bar > span{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--red),var(--blue));width:0%}
+
+  .footer{margin-top:1.25rem;display:flex;gap:.5rem;flex-wrap:wrap}
+  .kbd{background:#111827;color:#f9fafb;padding:.15rem .35rem;border-radius:6px;font-size:.9em}
+
+  .sr-only{
+    position:absolute !important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+
+  @media (max-width: 720px){
+    .goals{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header class="hero" role="banner">
+  <div class="wrap">
+    <div class="title">
+      <span class="pill">Year 7 · Stage 4</span>
+      <h1>Index Laws — I do · We do · You do</h1>
+    </div>
+    <p class="subtitle">Let’s explore index laws through a friendly dialogue and quick practice.</p>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      Home / Lessons / Indices / Index Laws
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="app" role="main">
+  <!-- Learning Intentions / Success Criteria -->
+  <section class="card" aria-labelledby="goals">
+    <h2 id="goals">Learning Intentions &amp; Success Criteria</h2>
+    <div class="goals">
+      <div class="panel">
+        <strong>Learning Intentions</strong>
+        <ul>
+          <li>Recognise and apply index laws to simplify expressions.</li>
+          <li>Use index notation to represent repeated multiplication.</li>
+        </ul>
+      </div>
+      <div class="panel blue">
+        <strong>Success Criteria</strong>
+        <ul>
+          <li>I can identify which index law to use in a problem.</li>
+          <li>
+            I can simplify expressions such as
+            <code>a<sup>m</sup> &middot; a<sup>n</sup></code>,
+            <code>a<sup>m</sup> / a<sup>n</sup></code>,
+            <code>(a<sup>m</sup>)<sup>n</sup></code>,
+            <code>(ab)<sup>n</sup></code>,
+            <code>a<sup>0</sup></code> (with <code>a &ne; 0</code>).
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="progress" aria-label="Your progress">
+      <div class="bar" aria-hidden="true"><span id="progressFill"></span></div>
+      <div><strong id="progressCount">0</strong> / <span id="progressTotal">0</span> answers locked in</div>
+    </div>
+  </section>
+
+  <!-- I DO — Visual Novel -->
+  <section class="card stage" id="stage-i-do" aria-labelledby="i-do-title">
+    <h2 id="i-do-title">Phase 1 — I do</h2>
+    <p class="blurb"><em>Watch and listen as the method is modelled. Ask a question any time.</em></p>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t" aria-hidden="true">T</span>Teacher</div>
+        <div class="content">
+          Let’s start with the <strong>product of powers</strong>. When the bases match, we can combine the indices by addition.
+        </div>
+      </div>
+
+      <div class="item" data-id="I1" aria-label="Practice item I1">
+        <div class="prompt">Simplify: <span> a<sup>3</sup> × a<sup>4</sup></span></div>
+        <div class="law">Idea: Same base? Bring the indices together using addition.</div>
+        <div class="io">
+          <label class="sr-only" for="I1_in">Your answer for a^3 × a^4</label>
+          <input id="I1_in" type="text" inputmode="text" placeholder="Write your answer using ^ for powers" aria-describedby="I1_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="I1_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="I1_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Same base <code>a</code>. How do the exponents work together?</p>
+          </div>
+          <div id="I1_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>a<sup>3</sup> × a<sup>4</sup> = a<sup>3+4</sup> = a<sup>7</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s" aria-hidden="true">S</span>Student</div>
+        <div class="content">
+          If the bases match, I add the indices. Got it.
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t" aria-hidden="true">T</span>Teacher</div>
+        <div class="content">
+          Now the <strong>quotient of powers</strong>. Dividing like bases means subtracting the indices—numerator minus denominator.
+        </div>
+      </div>
+
+      <div class="item" data-id="I2" aria-label="Practice item I2">
+        <div class="prompt">Simplify: <span> x<sup>9</sup> / x<sup>4</sup></span></div>
+        <div class="law">Idea: Same base? Compare how many copies remain after division.</div>
+        <div class="io">
+          <label class="sr-only" for="I2_in">Your answer for x^9 / x^4</label>
+          <input id="I2_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="I2_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="I2_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="I2_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Subtract the denominator’s exponent from the numerator’s.</p>
+          </div>
+          <div id="I2_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>x<sup>9</sup> / x<sup>4</sup> = x<sup>9−4</sup> = x<sup>5</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s" aria-hidden="true">S</span>Student</div>
+        <div class="content">
+          So for division I subtract the exponents. That makes sense.
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t" aria-hidden="true">T</span>Teacher</div>
+        <div class="content">
+          And here is the <strong>power of a power</strong>. A power raised to another power multiplies the indices.
+        </div>
+      </div>
+
+      <div class="item" data-id="I3" aria-label="Practice item I3">
+        <div class="prompt">Simplify: <span> (y<sup>2</sup>)<sup>3</sup></span></div>
+        <div class="law">Idea: Repeated groups of a power combine by multiplication of indices.</div>
+        <div class="io">
+          <label class="sr-only" for="I3_in">Your answer for (y^2)^3</label>
+          <input id="I3_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="I3_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="I3_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="I3_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Think “groups of groups” — multiply the exponents.</p>
+          </div>
+          <div id="I3_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>(y<sup>2</sup>)<sup>3</sup> = y<sup>2·3</sup> = y<sup>6</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s" aria-hidden="true">S</span>Student</div>
+        <div class="content">
+          Multiply the exponents when a power is raised to a power. Noted.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WE DO — Visual Novel -->
+  <section class="card stage" id="stage-we-do" aria-labelledby="we-do-title">
+    <h2 id="we-do-title">Phase 2 — We do</h2>
+    <p class="blurb"><em>Let’s think it through together. Ask questions whenever you’re curious.</em></p>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t">T</span>Teacher</div>
+        <div class="content">
+          Power of a product next: the index belongs to every factor inside the brackets.
+        </div>
+      </div>
+
+      <div class="item" data-id="W1">
+        <div class="prompt">Simplify: <span> (ab)<sup>3</sup></span></div>
+        <div class="law">Idea: Send the exponent to each factor.</div>
+        <div class="io">
+          <label class="sr-only" for="W1_in">Your answer for (ab)^3</label>
+          <input id="W1_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="W1_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="W1_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="W1_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Apply the same index to <code>a</code> and to <code>b</code>.</p>
+          </div>
+          <div id="W1_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>(ab)<sup>3</sup> = a<sup>3</sup>b<sup>3</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s">S</span>Student</div>
+        <div class="content">Both letters receive the same power. That feels straightforward.</div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t">T</span>Teacher</div>
+        <div class="content">
+          A quick check on the zero index: any non‑zero base to the power of zero equals one.
+        </div>
+      </div>
+
+      <div class="item" data-id="W2">
+        <div class="prompt">Evaluate: <span> 5<sup>0</sup></span></div>
+        <div class="law">Idea: Zero index with a non‑zero base gives <code>1</code>.</div>
+        <div class="io">
+          <label class="sr-only" for="W2_in">Your answer for 5^0</label>
+          <input id="W2_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="W2_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="W2_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="W2_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> How many copies are left when the exponent is zero?</p>
+          </div>
+          <div id="W2_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>5<sup>0</sup> = 1</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s">S</span>Student</div>
+        <div class="content">Zero power with a non‑zero base gives one. Good reminder.</div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t">T</span>Teacher</div>
+        <div class="content">
+          Let’s combine a few ideas at once.
+        </div>
+      </div>
+
+      <div class="item" data-id="W3">
+        <div class="prompt">Simplify: <span> a<sup>2</sup> × a<sup>5</sup> × a</span></div>
+        <div class="law">Idea: Add exponents for the same base (remember <code>a = a<sup>1</sup></code>).</div>
+        <div class="io">
+          <label class="sr-only" for="W3_in">Your answer for a^2 × a^5 × a</label>
+          <input id="W3_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="W3_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="W3_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="W3_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Count all the powers of the same base together.</p>
+          </div>
+          <div id="W3_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>a<sup>2</sup> × a<sup>5</sup> × a = a<sup>2+5+1</sup> = a<sup>8</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-id="W4">
+        <div class="prompt">Simplify: <span> (m<sup>4</sup> n<sup>2</sup>) / (m n)</span></div>
+        <div class="law">Idea: Subtract exponents for each base across numerator and denominator.</div>
+        <div class="io">
+          <label class="sr-only" for="W4_in">Your answer for (m^4 n^2)/(m n)</label>
+          <input id="W4_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="W4_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="W4_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="W4_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Reduce powers of <code>m</code> and <code>n</code> separately.</p>
+          </div>
+          <div id="W4_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>(m<sup>4</sup> n<sup>2</sup>)/(m n) = m<sup>3</sup> n</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble student">
+        <div class="meta"><span class="badge s">S</span>Student</div>
+        <div class="content">Subtract per base when dividing. That pattern is becoming familiar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- YOU DO — Visual Novel -->
+  <section class="card stage" id="stage-you-do" aria-labelledby="you-do-title">
+    <h2 id="you-do-title">Phase 3 — You do</h2>
+    <p class="blurb"><em>Your turn! When you’re satisfied with your thinking, lock in your answer.</em></p>
+
+    <div class="scene">
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t">T</span>Teacher</div>
+        <div class="content">
+          Take a calm breath, read carefully, and enjoy the patterns you’ve learned. You’ve got this.
+        </div>
+      </div>
+
+      <div class="item" data-id="Y1">
+        <div class="prompt">Simplify: <span> (2a)<sup>3</sup></span></div>
+        <div class="law">Idea: Power of a product — number and variable both receive the exponent.</div>
+        <div class="io">
+          <label class="sr-only" for="Y1_in">Your answer for (2a)^3</label>
+          <input id="Y1_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="Y1_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="Y1_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="Y1_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Distribute the exponent to both factors before simplifying.</p>
+          </div>
+          <div id="Y1_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>(2a)<sup>3</sup> = 2<sup>3</sup>a<sup>3</sup> = 8a<sup>3</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-id="Y2">
+        <div class="prompt">Simplify: <span> (p<sup>2</sup>)<sup>4</sup></span></div>
+        <div class="law">Idea: Power of a power — multiply the indices.</div>
+        <div class="io">
+          <label class="sr-only" for="Y2_in">Your answer for (p^2)^4</label>
+          <input id="Y2_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="Y2_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="Y2_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="Y2_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Multiply inner and outer exponents.</p>
+          </div>
+          <div id="Y2_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>(p<sup>2</sup>)<sup>4</sup> = p<sup>8</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-id="Y3">
+        <div class="prompt">Simplify: <span> b<sup>7</sup> / b<sup>3</sup></span></div>
+        <div class="law">Idea: Quotient of powers — subtract the indices (top minus bottom).</div>
+        <div class="io">
+          <label class="sr-only" for="Y3_in">Your answer for b^7 / b^3</label>
+          <input id="Y3_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="Y3_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="Y3_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="Y3_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Compare how many powers are left after division.</p>
+          </div>
+          <div id="Y3_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>b<sup>7</sup> / b<sup>3</sup> = b<sup>4</sup></code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-id="Y4">
+        <div class="prompt">Simplify or evaluate: <span> 3<sup>4</sup> × 3<sup>2</sup></span></div>
+        <div class="law">Idea: Product of powers — add the indices (evaluate if you wish).</div>
+        <div class="io">
+          <label class="sr-only" for="Y4_in">Your answer for 3^4 × 3^2</label>
+          <input id="Y4_in" type="text" placeholder="Write your answer using ^ for powers" aria-describedby="Y4_fb" />
+          <div class="buttons">
+            checkCheck</button>
+            askAsk a question</button>
+            solutionPeek at solution</button>
+          </div>
+          <div id="Y4_fb" class="fb" role="status" aria-live="polite"></div>
+          <div id="Y4_hint" class="hint" hidden>
+            <p><strong>Helpful thought:</strong> Combine the exponents first, then decide whether to evaluate.</p>
+          </div>
+          <div id="Y4_sol" class="hint" hidden>
+            <p><strong>Worked solution:</strong> <code>3<sup>4</sup> × 3<sup>2</sup> = 3<sup>6</sup> = 729</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bubble teacher">
+        <div class="meta"><span class="badge t">T</span>Teacher</div>
+        <div class="content">
+          Nice work focusing on the patterns. When you’re ready, lock in each answer.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Keyboard &amp; access tips</h2>
+    <p>
+      Press <span class="kbd">Enter</span> in an answer box to lock in your answer. Use <span class="kbd">Tab</span> to move between inputs and buttons. Hints and solutions toggle with clear announcements to assistive tech.
+    </p>
+    <div class="footer">
+      <button type="button" class="ghost" id="resetBtn" aria-label="Reset lesson">Reset lesson</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  /* ---------- Utilities ---------- */
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  // Normalize free-text math like "a^7" and "a^3 b^3"
+  function norm(txt){
+    if(!txt) return '';
+    return txt
+      .replace(/[·•]/g,' ')        // middle dot to space
+      .replace(/×/g,' x ')         // keep × tokenized if present
+      .replace(/\s+/g,' ')         // collapse spaces
+      .replace(/\s*\/\s*/g,' / ')  // spaced division
+      .replace(/\s*\^\s*/g,'^')    // remove spaces around ^
+      .replace(/\s*\(\s*/g,'(').replace(/\s*\)\s*/g,')')
+      .trim()
+      .toLowerCase();
+  }
+
+  // Compare two expressions as sets (order-insensitive) for commutative answers like "a^3 b^3"
+  function eqAnyOrder(input, expectedList){
+    const left = norm(input).split(' ').filter(Boolean).sort().join(' ');
+    const ok = expectedList.map(s => norm(s).split(' ').filter(Boolean).sort().join(' '));
+    return ok.includes(left);
+  }
+
+  function eqExact(input, expectedList){
+    const s = norm(input);
+    const ok = expectedList.map(e => norm(e));
+    return ok.includes(s);
+  }
+
+  // Progress tracking
+  const progress = {
+    total: 0,
+    correct: 0,
+    update(){
+      $('#progressCount').textContent = this.correct;
+      $('#progressTotal').textContent = this.total;
+      const pct = this.total ? Math.round(100*this.correct/this.total) : 0;
+      $('#progressFill').style.width = pct + '%';
+    }
+  };
+
+  /* ---------- Answer key ---------- */
+  const ANSWERS = {
+    I1: { anyOrder: false, accept: ['a^7'] },
+    I2: { anyOrder: false, accept: ['x^5'] },
+    I3: { anyOrder: false, accept: ['y^6'] },
+    W1: { anyOrder: true,  accept: ['a^3 b^3','b^3 a^3','a^3 · b^3'] },
+    W2: { anyOrder: false, accept: ['1'] },
+    W3: { anyOrder: false, accept: ['a^8'] },
+    W4: { anyOrder: true,  accept: ['m^3 n','n m^3','m^3 · n'] },
+    Y1: { anyOrder: false, accept: ['8a^3'] },
+    Y2: { anyOrder: false, accept: ['p^8'] },
+    Y3: { anyOrder: false, accept: ['b^4'] },
+    Y4: { anyOrder: false, accept: ['3^6','729'] },
+  };
+
+  /* ---------- Initialize ---------- */
+  const items = $$('.item');
+  progress.total = items.length;
+  progress.update();
+
+  items.forEach(item => {
+    const id = item.dataset.id;
+    const input = $('#' + id + '_in');
+    const fb = $('#' + id + '_fb');
+    const hint = $('#' + id + '_hint');
+    const sol = $('#' + id + '_sol');
+    const btnCheck = item.querySelector('[data-action="check"]') || createBtn(item, 'check', 'Lock in answer');
+    const btnAsk = item.querySelector('[data-action="ask"]') || createBtn(item, 'ask', 'Ask a question', true);
+    const btnSol = item.querySelector('[data-action="solution"]') || createBtn(item, 'solution', 'Peek at solution', true);
+
+    let attempted = false;
+    let scored = false;
+
+    function setFeedback(ok, msg){
+      fb.textContent = msg;
+      fb.classList.remove('ok','no');
+      fb.classList.add(ok ? 'ok' : 'no');
+    }
+
+    function disableCheck(){
+      btnCheck.disabled = true;
+      attempted = true;
+    }
+
+    function reveal(el, btn){
+      if(!el) return;
+      const isHidden = el.hasAttribute('hidden');
+      if(isHidden){
+        el.removeAttribute('hidden');
+        if(btn){ btn.setAttribute('aria-expanded','true'); }
+      }else{
+        el.setAttribute('hidden','');
+        if(btn){ btn.setAttribute('aria-expanded','false'); }
+      }
+    }
+
+    // Check logic (single lock-in attempt, framed positively)
+    btnCheck.addEventListener('click', () => {
+      if(attempted) return;
+      const spec = ANSWERS[id];
+      const value = input.value;
+      const correct = spec.anyOrder ? eqAnyOrder(value, spec.accept) : eqExact(value, spec.accept);
+
+      if(correct){
+        setFeedback(true, 'Nice! Your reasoning aligns with the index law.');
+        if(!scored){ progress.correct += 1; scored = true; progress.update(); }
+      }else{
+        setFeedback(false, 'Thanks for locking in your idea. Compare it with the worked solution below to grow your strategy.');
+        if(sol && sol.hasAttribute('hidden')) { reveal(sol, btnSol); }
+      }
+      disableCheck();
+      input.setAttribute('disabled','disabled');
+    });
+
+    // Enter key submits
+    input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        btnCheck.click();
+      }
+    });
+
+    // Ask a question (toggle hint)
+    btnAsk.addEventListener('click', () => {
+      reveal(hint, btnAsk);
+      if(!attempted){
+        setFeedback(true, 'Here’s a helpful nudge. Take your time.');
+      }
+    });
+
+    // Show solution toggle
+    btnSol.addEventListener('click', () => {
+      reveal(sol, btnSol);
+      if(!attempted){
+        setFeedback(true, 'Use the worked solution to refine your plan before you lock in.');
+      }
+    });
+  });
+
+  // If older markup missed data-action buttons, create them.
+  function createBtn(item, action, label, secondary=false){
+    const container = item.querySelector('.buttons') || item.appendChild(Object.assign(document.createElement('div'),{className:'buttons'}));
+    const b = document.createElement('button');
+    b.type='button';
+    b.dataset.action = action;
+    b.textContent = label;
+    if(secondary) b.classList.add('secondary');
+    container.appendChild(b);
+    return b;
+  }
+
+  // Reset lesson
+  $('#resetBtn').addEventListener('click', () => {
+    progress.correct = 0;
+    items.forEach(item => {
+      const id = item.dataset.id;
+      const input = $('#' + id + '_in');
+      const fb = $('#' + id + '_fb');
+      const hint = $('#' + id + '_hint');
+      const sol = $('#' + id + '_sol');
+      const btnCheck = item.querySelector('[data-action="check"]');
+      const btnAsk = item.querySelector('[data-action="ask"]');
+      const btnSol = item.querySelector('[data-action="solution"]');
+
+      input.removeAttribute('disabled');
+      input.value = '';
+      fb.textContent = '';
+      fb.classList.remove('ok','no');
+
+      if(hint){ hint.setAttribute('hidden',''); btnAsk.setAttribute('aria-expanded','false'); }
+      if(sol){ sol.setAttribute('hidden',''); btnSol.setAttribute('aria-expanded','false'); }
+
+      btnCheck.disabled = false;
+    });
+    progress.update();
+    const firstInput = $('#' + items[0].dataset.id + '_in');
+    if(firstInput){ firstInput.focus(); }
+  });
+})();
+</script>
+</body>
+</html>
+``

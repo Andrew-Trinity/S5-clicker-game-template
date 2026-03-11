@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Year 7 Visual Novel — Practice Task 1 (Integers & Indices)</title>
+<style>
+  :root{
+    /* Calm, engaging palette (soft teal/indigo with gentle accents) */
+    --bg: #f6fbff;
+    --panel: #ffffff;
+    --ink: #1f2a44;
+    --muted: #6b7a99;
+    --teal: #56c2c4;
+    --teal-2: #88d9da;
+    --indigo: #5563c1;
+    --indigo-2: #90a0ff;
+    --accent: #ffd166;
+    --ok: #48bb78;
+    --warn: #ed8936;
+    --shadow: 0 10px 25px rgba(40,60,120,.15);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(1200px 500px at 15% -10%, #eaf7ff 0%, #f6fbff 50%, #f6fbff 100%);
+  }
+
+  .app{
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 16px;
+  }
+
+  .topbar{
+    display:flex; align-items:center; gap:12px; margin-bottom:16px;
+  }
+  .badge{
+    background: linear-gradient(135deg, var(--teal), var(--indigo));
+    color:#fff; padding:6px 12px; border-radius:999px; font-weight:600; font-size:12px;
+    box-shadow: var(--shadow);
+  }
+  .title{
+    font-size: clamp(18px, 2.6vw, 26px); font-weight:800; letter-spacing:.2px;
+  }
+
+  .progress{
+    width:100%; height:10px; background:#e9f1ff; border-radius:999px; overflow:hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.05);
+  }
+  .progress > div{
+    height:100%; width:0%; background: linear-gradient(90deg, var(--indigo), var(--teal)); transition: width .35s ease;
+  }
+
+  .stage{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:16px;
+    margin-top:16px;
+  }
+  .panel{
+    background: var(--panel); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; min-height: 260px;
+  }
+  .student-label{
+    font-weight:700; color:#1e2b50; margin-top:8px;
+  }
+  .avatar{
+    width: 160px; height: 160px; border-radius: 24px; background:
+      radial-gradient(60px 60px at 60% 20%, rgba(255,255,255,.65), transparent 60%),
+      linear-gradient(135deg, #ffffff, #eef7ff);
+    box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center;
+    transition: transform .25s ease, box-shadow .25s ease, outline .25s ease;
+    position:relative; overflow:hidden;
+    outline: 4px solid transparent;
+  }
+  .speaking{
+    transform: translateY(-3px) scale(1.02);
+    outline-color: var(--indigo-2);
+  }
+  .avatar svg{ width: 100%; height: 100%; }
+
+  .prompt{
+    grid-column: 1 / -1;
+    background: linear-gradient(90deg, rgba(136,217,218,.2), rgba(144,160,255,.2));
+    border: 1px solid rgba(85,99,193,.15);
+    padding: 12px 14px; border-radius: 12px;
+    font-size: 14px; color:#1e2b50;
+  }
+
+  .textbox{
+    position: sticky; bottom: 12px; margin-top: 18px;
+    background: var(--panel); border-radius: var(--radius);
+    padding: 14px 14px 12px; box-shadow: var(--shadow);
+  }
+  .speaker-tag{
+    font-size: 12px; font-weight: 800; letter-spacing:.3px; text-transform: uppercase;
+    color:#4d5bbf; margin-bottom:6px;
+  }
+  .dialogue{
+    font-size: clamp(16px, 1.8vw, 19px); line-height: 1.5;
+  }
+
+  .controls{
+    display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:12px;
+  }
+  .controls .left, .controls .right{ display:flex; gap:8px; }
+  button{
+    border:0; background: var(--indigo); color:#fff; padding:10px 14px; border-radius:12px;
+    font-weight:700; cursor:pointer; box-shadow: var(--shadow);
+    transition: transform .1s ease, background .2s ease, box-shadow .2s ease;
+  }
+  button.secondary{ background: var(--teal); }
+  button.ghost{ background: #eaf1ff; color: var(--indigo); }
+  button:hover{ transform: translateY(-1px); }
+  button:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  .footer-note{
+    margin-top:10px; color: var(--muted); font-size:12px;
+  }
+
+  @media (max-width: 820px){
+    .stage{ grid-template-columns: 1fr; }
+    .avatar{ width: 120px; height:120px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Year 7 Visual Novel — Practice Task">
+    <div class="topbar" aria-live="polite">
+      <span class="badge">Practice Task 1 · Visual Novel</span>
+      <div class="title" id="title">Section A — Integers</div>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="progressBar"></div></div>
+
+    <div class="stage">
+      <div class="prompt" id="prompt">Let’s work through the practice task together. Use the buttons below to move between lines of dialogue.</div>
+
+      <!-- Student 1 -->
+      <section class="panel" aria-label="Student 1">
+        <div class="avatar" id="avatarLeft" aria-hidden="true">
+          <!-- Simple illustrated avatar (soft teal) -->
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#88d9da"/>
+                <stop offset="1" stop-color="#56c2c4"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="200" height="200" fill="url(#g1)"/>
+            <!-- head -->
+            <circle cx="100" cy="85" r="48" fill="#ffe6cc"/>
+            <!-- hair -->
+            <path d="M60,75 Q100,25 140,75 Q125,55 100,55 Q75,55 60,75 Z" fill="#2e3a7d"/>
+            <!-- eyes -->
+            <circle cx="85" cy="90" r="5" fill="#24324e"/>
+            <circle cx="115" cy="90" r="5" fill="#24324e"/>
+            <!-- smile -->
+            <path d="M80,105 Q100,120 120,105" stroke="#24324e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <!-- shirt -->
+            <rect x="60" y="130" width="80" height="60" rx="16" fill="#eaf7ff" stroke="#90a0ff" />
+          </svg>
+        </div>
+        <div class="student-label">Student 1</div>
+      </section>
+
+      <!-- Student 2 -->
+      <section class="panel" aria-label="Student 2">
+        <div class="avatar" id="avatarRight" aria-hidden="true">
+          <!-- Simple illustrated avatar (soft indigo) -->
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#90a0ff"/>
+                <stop offset="1" stop-color="#5563c1"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="200" height="200" fill="url(#g2)"/>
+            <!-- head -->
+            <circle cx="100" cy="85" r="48" fill="#ffe6cc"/>
+            <!-- hair (short) -->
+            <path d="M60,80 Q100,45 140,80 Q140,60 120,55 Q100,50 80,55 Q60,60 60,80 Z" fill="#1f2a44"/>
+            <!-- glasses -->
+            <rect x="70" y="82" width="25" height="14" rx="3" fill="none" stroke="#1f2a44" stroke-width="3"/>
+            <rect x="105" y="82" width="25" height="14" rx="3" fill="none" stroke="#1f2a44" stroke-width="3"/>
+            <line x1="95" y1="88.5" x2="105" y2="88.5" stroke="#1f2a44" stroke-width="3"/>
+            <!-- smile -->
+            <path d="M80,107 Q100,122 120,107" stroke="#24324e" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <!-- shirt -->
+            <rect x="60" y="130" width="80" height="60" rx="16" fill="#eef0ff" stroke="#56c2c4" />
+          </svg>
+        </div>
+        <div class="student-label">Student 2</div>
+      </section>
+    </div>
+
+    <!-- Dialogue Box -->
+    <div class="textbox" aria-live="polite" aria-atomic="true">
+      <div class="speaker-tag" id="speaker">Student 1</div>
+      <div class="dialogue" id="dialogue">Tap Continue to begin.</div>
+      <div class="controls">
+        <div class="left">
+          <button id="btnBack" class="ghost" disabled>&larr; Back</button>
+        </div>
+        <div class="right">
+          <button id="btnRepeat" class="secondary" title="Re-read the current line">Repeat</button>
+          <button id="btnNext">Continue &rarr;</button>
+        </div>
+      </div>
+      <div class="footer-note">
+        Tip: Use keyboard <strong>←</strong> and <strong>→</strong> to move, or <strong>R</strong> to replay a line.
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  Year 7 Visual Novel — Practice Task 1 (Single file)
+  Authoring notes for the teacher:
+  - All dialogue content is in the "chapters" array below.
+  - Each chapter aligns to a question/sub-question in your PDF.
+  - We include occasional uncertainty lines, followed by a correction/confirmation.
+  - Ambiguities from the scanned task (e.g., Section B Q5–6 exact figures) are handled with generic reasoning notes.
+  - You can tweak wording freely—this is a teacher-facing, editable script.
+*/
+
+const chapters = [
+  {
+    id: "intro",
+    title: "Welcome",
+    prompt: "Let’s work through the practice task together. Students discuss, question, and confirm reasoning.",
+    lines: [
+      {speaker:"s1", text:"We’ve got Integers, Indices, and some Multiple Choice at the end. Let’s team up!"},
+      {speaker:"s2", text:"Agreed. I’ll say what I think; you challenge me if it’s wobbly."}
+    ]
+  },
+
+  // --------------------------
+  // Section A — Integers (Q1–Q6)
+  // --------------------------
+  {
+    id: "A1a",
+    title: "Section A – Q1a",
+    prompt: "Q1a) State the integer where the point is plotted on the number line.",
+    lines: [
+      {speaker:"s1", text:"I think the answer is −3 because the dot is right on −3 on the number line."},
+      {speaker:"s2", text:"Looks aligned to me. So the integer is −3."}
+    ]
+  },
+  {
+    id: "A1b",
+    title: "Section A – Q1b",
+    prompt: "Q1b) State the opposite of the integer where the point is plotted.",
+    lines: [
+      {speaker:"s1", text:"If the point was −3, the opposite is either 3 or maybe −(−3) which is also 3…"},
+      {speaker:"s2", text:"Yep—opposite means same distance from zero, other side. That’s 3."}
+    ]
+  },
+  {
+    id: "A1c",
+    title: "Section A – Q1c",
+    prompt: "Q1c) State the integer 5 units to the right of the plotted point.",
+    lines: [
+      {speaker:"s1", text:"Starting at −3, five to the right: −2, −1, 0, 1, 2… so 2."},
+      {speaker:"s2", text:"Agreed. Moving right increases the value: answer is 2."}
+    ]
+  },
+  {
+    id: "A1d",
+    title: "Section A – Q1d",
+    prompt: "Q1d) State the integer 3 units to the left of the plotted point.",
+    lines: [
+      {speaker:"s1", text:"Left means smaller. From −3: −4, −5, −6 → so −6."},
+      {speaker:"s2", text:"Correct: −6."}
+    ]
+  },
+
+  {
+    id: "A2a",
+    title: "Section A – Q2a",
+    prompt: "Q2a) Complete with < or > : 7 __ −1",
+    lines: [
+      {speaker:"s1", text:"Positive 7 compared with −1… 7 is greater. So 7 > −1."},
+      {speaker:"s2", text:"Yes: 7 > −1."}
+    ]
+  },
+  {
+    id: "A2b",
+    title: "Section A – Q2b",
+    prompt: "Q2b) Complete with < or > : −15 __ −20",
+    lines: [
+      {speaker:"s1", text:"Closer to zero is bigger for negatives. −15 is greater than −20."},
+      {speaker:"s2", text:"So the sign is > . −15 > −20."}
+    ]
+  },
+
+  {
+    id: "A3",
+    title: "Section A – Q3",
+    prompt: "Q3) Arrange in ascending order: 11, −12, 7, −5, −1, 9",
+    lines: [
+      {speaker:"s1", text:"Ascending means smallest to largest. For negatives, more negative is smaller."},
+      {speaker:"s2", text:"So order should be −12, −5, −1, 7, 9, 11."}
+    ]
+  },
+
+  {
+    id: "A4",
+    title: "Section A – Q4",
+    prompt: "Q4) Use the number line to show that 5 + (−8) = −3",
+    lines: [
+      {speaker:"s1", text:"Start at 5, move 8 left for adding −8, land at −3."},
+      {speaker:"s2", text:"Exactly—so 5 + (−8) = −3."}
+    ]
+  },
+
+  {
+    id: "A5a",
+    title: "Section A – Q5a",
+    prompt: "Q5a) Use order of operations: 8 + 3 × 7",
+    lines: [
+      {speaker:"s1", text:"Times first: 3 × 7 = 21; then 8 + 21 = 29."},
+      {speaker:"s2", text:"Final answer: 29."}
+    ]
+  },
+  {
+    id: "A5b",
+    title: "Section A – Q5b",
+    prompt: "Q5b) 8 + 2 × (7 − 3) ÷ 4",
+    lines: [
+      {speaker:"s1", text:"Brackets first: (7 − 3) = 4. Then 2 × 4 = 8. Then 8 ÷ 4 = 2. Finally 8 + 2 = 10."},
+      {speaker:"s2", text:"So the result is 10."}
+    ]
+  },
+
+  {
+    id: "A6a",
+    title: "Section A – Q6a",
+    prompt: "Q6a) Insert +, −, ×, ÷ to make: 3 7 3 = 24",
+    lines: [
+      {speaker:"s1", text:"It could be 3 × 7 + 3 = 24… or 3 + 7 × 3 = 24."},
+      {speaker:"s2", text:"Both actually work by order of operations. Let’s use 3 × 7 + 3 = 24."}
+    ]
+  },
+  {
+    id: "A6b",
+    title: "Section A – Q6b",
+    prompt: "Q6b) Insert +, −, ×, ÷ to make: 8 3 3 = −1",
+    lines: [
+      {speaker:"s1", text:"Maybe 8 − 3 × 3 = −1? Since 3 × 3 = 9 and 8 − 9 = −1."},
+      {speaker:"s2", text:"Yes, that works neatly."}
+    ]
+  },
+  {
+    id: "A6c",
+    title: "Section A – Q6c",
+    prompt: "Q6c) Insert +, −, ×, ÷ to make: 5 5 7 10 = −3",
+    lines: [
+      {speaker:"s1", text:"Not sure… could be 5 − 5 + 7 − 10 = −3, or maybe (5 + 5) − 7 − 10 = −7."},
+      {speaker:"s2", text:"The −3 target is hit by 5 − 5 + 7 − 10. Let’s go with that."}
+    ]
+  },
+
+  // --------------------------
+  // Section B — Indices (Q1–Q8)
+  // --------------------------
+
+  {
+    id: "B1",
+    title: "Section B – Q1",
+    prompt: "Q1) What are the mathematical terms for the parts in indices (e.g., 2^5)?",
+    lines: [
+      {speaker:"s1", text:"I think 2 is the base and 5 is the index or exponent."},
+      {speaker:"s2", text:"Right: base^index (exponent/power)."}
+    ]
+  },
+
+  {
+    id: "B2a",
+    title: "Section B – Q2a",
+    prompt: "Q2a) 7² − 4²",
+    lines: [
+      {speaker:"s1", text:"7² = 49 and 4² = 16; 49 − 16 = 33."},
+      {speaker:"s2", text:"Answer: 33."}
+    ]
+  },
+  {
+    id: "B2b",
+    title: "Section B – Q2b",
+    prompt: "Q2b) 9² + √(27 ÷ 3)",
+    lines: [
+      {speaker:"s1", text:"I’m not totally sure—could it be 9² + √27 ÷ 3, or 9² + √(27 ÷ 3)?"},
+      {speaker:"s2", text:"If it’s √(27 ÷ 3), that’s √9 = 3, so 81 + 3 = 84. Let’s record 84."}
+    ]
+  },
+
+  {
+    id: "B3a",
+    title: "Section B – Q3a",
+    prompt: "Q3a) Simplify: 5² × 5³",
+    lines: [
+      {speaker:"s1", text:"Same base multiply → add indices: 5^(2+3) = 5^5."},
+      {speaker:"s2", text:"So 5⁵."}
+    ]
+  },
+  {
+    id: "B3b",
+    title: "Section B – Q3b",
+    prompt: "Q3b) Simplify: 3⁷ ÷ 3³",
+    lines: [
+      {speaker:"s1", text:"Same base divide → subtract indices: 3^(7−3) = 3⁴."},
+      {speaker:"s2", text:"3⁴."}
+    ]
+  },
+  {
+    id: "B3c",
+    title: "Section B – Q3c",
+    prompt: "Q3c) Simplify: (2³)⁵",
+    lines: [
+      {speaker:"s1", text:"Power of a power → multiply indices: 2^(3×5) = 2^15."},
+      {speaker:"s2", text:"2¹⁵."}
+    ]
+  },
+  {
+    id: "B3d",
+    title: "Section B – Q3d",
+    prompt: "Q3d) Write in index form: 7 × 7 × 7 × 7 × 4 × 4 × 4",
+    lines: [
+      {speaker:"s1", text:"That’s 7⁴ × 4³."},
+      {speaker:"s2", text:"Exactly: 7⁴ · 4³."}
+    ]
+  },
+
+  {
+    id: "B4",
+    title: "Section B – Q4",
+    prompt: "Q4) List all factors: (a) 16 (b) 28. Then HCF(16, 28).",
+    lines: [
+      {speaker:"s1", text:"16 → 1, 2, 4, 8, 16; 28 → 1, 2, 4, 7, 14, 28."},
+      {speaker:"s2", text:"Common factors are 1, 2, 4. Highest is 4 → HCF = 4."}
+    ]
+  },
+
+  {
+    id: "B5",
+    title: "Section B – Q5",
+    prompt: "Q5) (a) Complete the factor tree. (b) Write the number as a product of prime factors.",
+    lines: [
+      {speaker:"s1", text:"The paper’s diagram decides the number—our copy doesn’t show it here. Might be something like 84 or 72."},
+      {speaker:"s2", text:"Either way, the idea is: keep splitting into primes until all leaves are prime, then multiply: e.g., 84 = 2 × 2 × 3 × 7 = 2²·3·7."}
+    ]
+  },
+
+  {
+    id: "B6",
+    title: "Section B – Q6",
+    prompt: "Q6) Insert the index powers that make the statement correct.",
+    lines: [
+      {speaker:"s1", text:"I’m not 100% sure of the exact expression; the rule is: same base multiply → add indices; divide → subtract; power of a power → multiply."},
+      {speaker:"s2", text:"Right—so choose exponents that satisfy that relationship."}
+    ]
+  },
+
+  {
+    id: "B7",
+    title: "Section B – Q7",
+    prompt: "Q7) Find the lowest common multiple of 12, 20 and 30.",
+    lines: [
+      {speaker:"s1", text:"12 = 2²·3, 20 = 2²·5, 30 = 2·3·5. LCM = 2²·3·5 = 60."},
+      {speaker:"s2", text:"Answer: 60."}
+    ]
+  },
+
+  {
+    id: "B8",
+    title: "Section B – Q8",
+    prompt: "Q8) Three bells ring every 12, 16, 24 seconds. After how many seconds together?",
+    lines: [
+      {speaker:"s1", text:"LCM(12,16,24). 12=2²·3, 16=2⁴, 24=2³·3 → LCM = 2⁴·3 = 48."},
+      {speaker:"s2", text:"So they ring together after 48 seconds."}
+    ]
+  },
+
+  // --------------------------
+  // Section C — Multiple Choice (Strategy dialogue, since items not shown)
+  // --------------------------
+  {
+    id: "C1",
+    title: "Section C – Multiple Choice",
+    prompt: "MCQ strategy (since the exact items aren’t displayed here).",
+    lines: [
+      {speaker:"s1", text:"For multiple choice, I’ll estimate or test options quickly, then eliminate impossibles."},
+      {speaker:"s2", text:"And check signs, units, and order of operations—lots of traps live there."}
+    ]
+  },
+
+  // Outro
+  {
+    id: "outro",
+    title: "Wrap-up",
+    prompt: "Great work!",
+    lines: [
+      {speaker:"s1", text:"That’s the whole practice task. I liked double-checking each other’s steps."},
+      {speaker:"s2", text:"Same! If we were unsure, we reasoned it out. Ready for the real thing."}
+    ]
+  }
+];
+
+// ------- Engine -------
+const flat = [];
+chapters.forEach(ch => {
+  flat.push({ meta:true, id: ch.id, title: ch.title, prompt: ch.prompt });
+  ch.lines.forEach((ln, i)=> flat.push({ ...ln, title: ch.title, prompt: ch.prompt }));
+});
+
+let idx = 0;
+
+const elTitle = document.getElementById('title');
+const elPrompt = document.getElementById('prompt');
+const elSpeaker = document.getElementById('speaker');
+const elDialogue = document.getElementById('dialogue');
+const elAvatarLeft = document.getElementById('avatarLeft');
+const elAvatarRight = document.getElementById('avatarRight');
+const btnNext = document.getElementById('btnNext');
+const btnBack = document.getElementById('btnBack');
+const btnRepeat = document.getElementById('btnRepeat');
+const bar = document.getElementById('progressBar');
+
+function render() {
+  const node = flat[idx];
+  const totalLines = flat.filter(x => !x.meta).length;
+  const lineNumber = flat.slice(0, idx+1).filter(x => !x.meta).length;
+
+  // Progress bar
+  const pct = Math.round((lineNumber / totalLines) * 100);
+  bar.style.width = pct + "%";
+
+  // Chapter header and prompt
+  elTitle.textContent = node.title || "Practice Task 1";
+  elPrompt.textContent = node.prompt || "";
+
+  if (node.meta) {
+    // Chapter card—show neutral speaker line
+    elSpeaker.textContent = "—";
+    elDialogue.innerHTML = `<em>Next up:</em> <strong>${node.title}</strong>`;
+    setSpeaking(null);
+  } else {
+    elSpeaker.textContent = node.speaker === "s1" ? "Student 1" : "Student 2";
+    elDialogue.textContent = node.text;
+    setSpeaking(node.speaker);
+  }
+
+  // Buttons
+  btnBack.disabled = idx === 0;
+  btnNext.disabled = idx >= flat.length - 1;
+}
+function setSpeaking(who){
+  elAvatarLeft.classList.toggle('speaking', who === 's1');
+  elAvatarRight.classList.toggle('speaking', who === 's2');
+}
+function next(){ if(idx < flat.length - 1){ idx++; render(); } }
+function back(){ if(idx > 0){ idx--; render(); } }
+
+btnNext.addEventListener('click', next);
+btnBack.addEventListener('click', back);
+btnRepeat.addEventListener('click', ()=> render());
+
+document.addEventListener('keydown', (e)=>{
+  if (e.key === "ArrowRight") next();
+  if (e.key === "ArrowLeft") back();
+  if (e.key.toLowerCase() === "r") render();
+});
+
+// initial render
+render();
+</script>
+</body>
+</html>
+``
